@@ -20,9 +20,6 @@
 
 
 namespace {
-    template <typename T>
-    concept integral = std::integral<T> && !std::same_as<std::remove_cv_t<T>, bool>;
-
     class RealRandom {
 #ifdef _WIN32
         HCRYPTPROV handle_{ 0 };
@@ -84,6 +81,9 @@ namespace {
 #endif
         }
     };
+
+    template <typename T>
+    concept integral = std::integral<T> && !std::same_as<std::remove_cv_t<T>, bool>;
 }
 
 
@@ -99,24 +99,26 @@ T random_integer() {
 }
 
 template <integral T, template <typename> class Container = std::pmr::vector>
-Container<T> random_integers(size_t num) {
-    if (num == 0) {
+Container<T> random_integers(size_t size) {
+    if (size == 0) {
         return Container<T>{};
     }
 
-    Container<T> res(num);
-    random_bytes(res.data(), num * sizeof(T));
+    Container<T> res(size);
+    random_bytes(res.data(), size * sizeof(T));
     return res;
 }
 
-std::pmr::string random_string(size_t size) {
+template <typename Str = std::pmr::string>
+Str random_string(size_t size) {
     if (size == 0) {
-        return "";
+        return Str{};
     }
 
-    auto buffer = new char[size];
-    random_bytes(buffer, size);
-    std::pmr::string res(buffer, buffer + size);
+    using char_type = typename Str::value_type;
+    auto buffer = new char_type[size];
+    random_bytes(buffer, size * sizeof(char_type));
+    Str res(buffer, buffer + size);
     delete[] buffer;
     return res;
 }
